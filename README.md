@@ -84,7 +84,7 @@ Each ticker gets a directory under `coverage/` (Obsidian-compatible; open the fo
 |---|---|---|
 | `dossier.md` | Living thesis, KPI watchlist with numeric triggers, valuation snapshot | system (you gate) |
 | `assumptions.json` | **Single source of truth** for model inputs — vectors, probabilities, provenance | the write contract |
-| `{T}_Integrated_Financials.xlsx` | The workbook: source tabs (annual + quarterly sections, core-earnings bridge) → condensed (toggleable) → DuPont → earnings quality → models → multiples, rationalization, guidance & consensus | system builds, **you edit** |
+| `{T}_Integrated_Financials.xlsx` | The workbook — tab-by-tab tour in the next section | system builds, **you edit** |
 | `notes.md` | Your free-form thinking — read at every system touch, answered in the journal | **you** |
 | `journal.md` | Dated record: every event, forecast-vs-actual, change, and rationale | system |
 | `pending_decisions.md` | Proposals from unattended runs awaiting your gate | system (you clear) |
@@ -95,9 +95,27 @@ Each ticker gets a directory under `coverage/` (Obsidian-compatible; open the fo
 
 `coverage/_conventions.md` holds **your** standing conventions (classification calls, layout preferences) — every skill reads it first, and when your workbook edits diverge from it, that divergence is treated as feedback to adopt, not noise to overwrite.
 
+## The workbook — a tour of the tabs
+
+A full build produces one integrated workbook per ticker. Only the three source tabs hold hardcoded financials (plus researched bridge amounts and per-filing Benford statistics, each with provenance); **everything else is live Excel formulas**, so your edits reflow the whole chain.
+
+| Tab | What it holds | What you do with it |
+|---|---|---|
+| **Income Statement / Balance Sheet / Cash Flow** | Up to **ten years of as-filed annual statements** (superset schema across years, newest-filing-wins restatements, blocking checksums) — and, **below each annual block, a quarterly section** with the same rows for the last ~10–12 quarters | Read a full cycle, annual and quarterly, in one scroll per statement |
+| **Core Earnings Bridge** (foot of the Income Statement) | Every researched **non-recurring item** — impairments, restructurings, fines and settlements, disposal gains, inventory writedowns *and their later carryover benefits*, debt-extinguishment losses — one row each with the amount in its fiscal-year column, the filing source, a short evidence quote, and a confidence rating. Below them: core pretax → core tax → **core net income, core EPS, core NOPAT margin** | Flip any item's **Include? toggle** (your call, preserved across rebuilds); compare core vs. reported margin — the number a margin fade *should* anchor on |
+| **Condensed Financials** | NOPAT reformulation + the **interactive classification table** (8 categories, in-cell dropdowns); NOWC/NOA/Net Debt aggregates are SUMIFs over your toggles; quarterly NOPAT + aggregates below, **driven by the same toggle column**; a CHECK row ties implied to reported equity exactly, every period | Toggle a line between operating and financial and watch NOA, Net Debt, DuPont, and the model anchor recompute |
+| **ALT DuPont** | ROE = RNOA + FLEV × Spread, per year — and a quarterly decomposition below (flows annualized ×4), so RNOA becomes readable quarter by quarter | Watch the cycle turn in the returns, not just the revenue |
+| **Earnings Quality** | Four forensic screens, annual *and* quarterly: **accrual decomposition** (ΔNOA and NI−CFO scaled by average NOA, CFO/NI cash conversion), **Beneish M-Score** (8 components, flag above −1.78), **Piotroski F-Score** (9 signals), and **Benford's-law digit tests** over each filing's *full XBRL fact set* (hundreds of tagged values per 10-K/10-Q, MAD + χ²) | Treat flags as tripwires demanding explanation — the tab header says so: screens calibrated on cross-sections, not verdicts |
+| **Valuation Multiples** | Per fiscal year: the earnings-release date (from the item-2.02 8-K), the price **30 days after release**, trailing and forward P/E, PEG (honestly `n/m` when growth or earnings are negative), P/S, P/B — on a split-consistent EPS basis | See what the market historically paid for these earnings at each point in the cycle |
+| **Guidance & Consensus** | A **ledger of every management outlook** from the earnings 8-Ks joined to the as-filed GAAP actual (actual-vs-midpoint, percentile of the guided range — a management-credibility series; for no-guidance companies, the dated quantified forward statements such as capex outlooks); **consensus snapshots captured dated and never backfilled** (free data has no as-of archive — this ledger *is* the archive); and a **translation block**: OUR model's revenue/growth/margin/EPS vs. the STREET's vs. the GUIDE, with deltas | Read "where we disagree with the street" in the model's own units, and whether the street is pricing a beat above management's own guide |
+| **Model_Bear / Base / Bull + Scenario_Summary** | The 10-year residual income engine per scenario — blue cells are your forecast vectors, terminal returns calibrated against cost of equity — and the probability-weighted intrinsic value | Rewrite a vector, save, close; the system registers it with provenance |
+| **Price Rationalization** | The model inverted at the market price along four axes (implied probabilities, terminal returns, growth, discount rate) plus scored "what must be true" stories; owns the editable price cell | Ask what the market believes — and whether you can believe it too |
+
+Quarterly mechanics worth knowing: **no company files a Q4 10-Q**, so Q4 is always derived (income/cash-flow Q4 = fiscal year − ΣQ1–Q3; the Q4 balance sheet *is* the 10-K's), 10-Q cash-flow statements are filed cumulative and are de-cumulated into discrete quarters, and every derived column passes the same blocking checksums as the filed ones. New quarters, new outlooks, and weekly consensus snapshots append automatically — as-filed data is fact, not judgment (see "Living with it" below).
+
 ## The example — open it now
 
-[`example/ACME_Integrated_Financials.xlsx`](example/ACME_Integrated_Financials.xlsx) is a miniature, fully-consistent fictional company (3 fiscal years, one model scenario) you can open before running anything:
+[`example/ACME_Integrated_Financials.xlsx`](example/ACME_Integrated_Financials.xlsx) is a miniature, fully-consistent fictional company (3 fiscal years, one model scenario — the minimal core, not the full tab set above) you can open before running anything:
 
 1. **Income Statement / Balance Sheet / Cash Flow** — the only tabs with hardcoded data; column headers are real dates (downstream formulas depend on it); every subtotal computes; A = L + E ties.
 2. **Condensed Financials** — the interactive heart. Section C lists every balance-sheet line with a **dropdown in column E**. Click `Short-term investments` and flip it from `Financial Asset` to `Operating Working Capital Asset`: watch NOWC, NOA, and Net Debt recompute through the SUMIFs, then the DuPont ratios, then the model's anchor. That toggle-and-watch loop is the core analytical experience.
