@@ -115,7 +115,14 @@ Quarterly mechanics worth knowing: **no company files a Q4 10-Q**, so Q4 is alwa
 
 ## The example — open it now
 
-[`example/ACME_Integrated_Financials.xlsx`](example/ACME_Integrated_Financials.xlsx) is a miniature, fully-consistent fictional company (3 fiscal years, one model scenario — the minimal core, not the full tab set above) you can open before running anything:
+**[`example/GOOGL_Demo_Integrated_Financials.xlsx`](example/GOOGL_Demo_Integrated_Financials.xlsx) is the real thing**: a full 12-tab build on Alphabet with **ten years of actual as-filed SEC data** — every tab from the tour above except Price Rationalization. The financial data, quarterly sections, core-earnings items (EC fines, severance programs, the securities-gains swings — each with its filing citation), earnings-quality screens, valuation multiples, and the capex guidance ladder are all real and checksummed. **The model inputs are deliberately illustrative** (generic textbook vectors, 25/50/25 weights, labeled as such in every model tab) — the demo shows you the machine, not anyone's investment view. Nothing in it is analysis or advice. Things worth trying first:
+
+- **Condensed Financials, Section C**: flip a classification dropdown and watch NOA, Net Debt, the DuPont ratios, *and the quarterly aggregates below* all recompute from one toggle.
+- **Income Statement, bottom**: the Core Earnings Bridge — see what FY2025 earnings look like with $24B of securities gains stripped out, then flip an item's Include? toggle.
+- **Earnings Quality**: ten years of M-Scores and F-Scores as live formulas; Benford digit statistics per filing.
+- **Guidance & Consensus**: Alphabet's capex statements ($75B → $85B → $91–93B → $175–185B) against the as-filed actuals.
+
+[`example/ACME_Integrated_Financials.xlsx`](example/ACME_Integrated_Financials.xlsx) is the minimal companion — a fully-consistent *fictional* company (3 fiscal years, one scenario) small enough to audit cell by cell, regenerable with `python3 example/build_sample.py`:
 
 1. **Income Statement / Balance Sheet / Cash Flow** — the only tabs with hardcoded data; column headers are real dates (downstream formulas depend on it); every subtotal computes; A = L + E ties.
 2. **Condensed Financials** — the interactive heart. Section C lists every balance-sheet line with a **dropdown in column E**. Click `Short-term investments` and flip it from `Financial Asset` to `Operating Working Capital Asset`: watch NOWC, NOA, and Net Debt recompute through the SUMIFs, then the DuPont ratios, then the model's anchor. That toggle-and-watch loop is the core analytical experience.
