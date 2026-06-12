@@ -1,0 +1,34 @@
+{
+  "$comment": "Permission profile for UNATTENDED bav runs only — passed via `claude -p --settings automation/headless_settings.json`. Deliberately NOT the project settings: interactive sessions keep their normal prompts. TRUST MODEL (be honest): Bash(python3) makes the deny rules guardrails against the model's own habits, not a security boundary — a determined process could bypass them. The real protections are: the model only sees vault data, git history is append-only and pushed (tamper-evident), and the runner owns push. WebFetch is unrestricted because bav-news must trace claims to arbitrary primary sources.",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch",
+      "Bash(python3:*)",
+      "Bash(pip3 install:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(cat:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add coverage/:*)",
+      "Bash(osascript -e:*)"
+    ],
+    "deny": [
+      "Bash(rm:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git rebase:*)",
+      "Bash(sudo:*)",
+      "Bash(open:*)"
+    ]
+  }
+}

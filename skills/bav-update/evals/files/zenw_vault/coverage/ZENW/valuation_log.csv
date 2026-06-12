@@ -1,0 +1,2 @@
+date,trigger,price,bear_ivps,base_ivps,bull_ivps,weighted_ivps,gap_vs_price_pct,prob_bear,prob_base,prob_bull,notes
+2026-06-01,initial_build,84.00,16.93,46.59,99.55,52.42,-37.6,0.25,0.50,0.25,FY2021-25 fixture data; first full pipeline run

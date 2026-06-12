@@ -1,0 +1,60 @@
+{
+  "skill_name": "bav-update",
+  "_comment": "Fixtures: files/legacy_vault is a frozen copy of a real pre-v2 MSFT position (legacy assumptions schema, no scripts/, no recorded valuation) — the realistic 'first update on a legacy position' case. files/zenw_vault is a clean schema-v2 position for the fictional ZENW with a working scripts/build_model.py. Reported figures are supplied inside the prompts so runs don't depend on live web data; dates are pinned. See ../bav-pipeline/evals/README.md for how to run.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "legacy-earnings-update-migration-and-watchlist",
+      "prompt": "Assume today is 2026-06-10. Setup: copy the provided legacy_vault/coverage directory to ./coverage in your working directory — that is my coverage vault. MSFT reported Q3 FY2026 earnings — update the model. To keep this run self-contained, use these as the reported figures and skip live web search: quarter ended 2026-03-31, reported 2026-04-29; revenue $79.7B (+13.9% y/y); Azure growth 24% in constant currency (down from 39% in Q2 FY2026); quarterly CapEx $38.2B (up from $34.9B); operating margin 43.1%; M365 Copilot paid seats 21M; guidance for Q4 FY2026: revenue +12–13% y/y with CapEx still growing. Market data: MSFT price $415.00 as of 2026-06-10; 10Y treasury 4.25%. EDGAR is reachable if you need filing metadata, but treat the figures above as the quarter's actuals.",
+      "expected_output": "A first bav-update on a legacy position: loads state and acknowledges no valuation is on record; snapshots the original legacy assumptions.json to history/ untouched, migrates it to schema v2; diffs reported actuals against the Year-1 forecast vectors; evaluates every KPI watchlist row and treats the tripped CapEx-up-while-Azure-down row as requiring a revision or an explicit stand-pat rationale; proposes specific revisions with provenance; re-runs the model to establish the valuation baseline and persists scripts this time; then records journal entry, valuation_log row, dossier frontmatter, and universe row, and reports a compact brief leading with the conclusion.",
+      "files": ["evals/files/legacy_vault"],
+      "expectations": [
+        "The skill loaded position state first (dossier.md, assumptions.json, journal, valuation_log tail) and acknowledged the documented gaps: no model results on record and a legacy-schema assumptions.json.",
+        "The ORIGINAL legacy assumptions.json was snapshotted to coverage/MSFT/history/ unmodified BEFORE any rewrite (the snapshot still has the legacy key names like revenueGrowthVector and lowercase scenario keys).",
+        "assumptions.json was migrated to canonical schema v2: schemaVersion 2, scenarios keyed Bear/Base/Bull with growthVector/marginVector/nowcRatioVector/nolaRatioVector (10 elements, decimals), a meta block with trigger earnings_update and supersedes set, and marketData carrying price 415.00 dated 2026-06-10.",
+        "Forecast-vs-actual was stated plainly with numbers: reported revenue growth 13.9% y/y compared against the Year-1 growth of each scenario vector (legacy Base Y1 was 15%, Bull 18%, Bear 12% — so the print tracks below Base, between Bear and Base), with the caveat that one quarter annualizes noisily.",
+        "Every KPI watchlist row was evaluated against the supplied data and each row's current/asOf was updated.",
+        "The 'Quarterly CapEx' watchlist row was identified as TRIPPED (CapEx rose to $38.2B while Azure growth fell 39%→24%), and the response either proposed a concrete assumption/probability revision or recorded an explicit journal rationale for standing pat — it did not ignore the trigger.",
+        "Proposed revisions were specific, with provenance (which vector elements or probabilities, and the evidence); a probability shift was preferred over a wholesale vector rewrite unless a thesis change was argued.",
+        "The model was re-run so the position finally has results: assumptions.json now has a results block with per-scenario IVPS, weightedIVPS, and gapVsPricePct against the $415.00 price.",
+        "Because the legacy position had no scripts/, build scripts were rebuilt and PERSISTED under coverage/MSFT/scripts/ this time.",
+        "journal.md gained a new top entry containing: trigger, forecast-vs-actual, the watchlist check result including the tripped row, what changed in assumptions.json and why, the new valuation, and open items (the dossier's known opens such as the July 2026 M365 price increases).",
+        "valuation_log.csv gained exactly one new row with trigger earnings_update; the existing 2026-03-08 row is untouched.",
+        "dossier.md frontmatter was updated: numeric weighted_ivps, price_at_update 415.00 with price_date 2026-06-10, last_update 2026-06-10, a future next_catalyst (FY2026 Q4 earnings ~late Jul 2026), status current; the MSFT row in coverage/_universe.md was refreshed to match.",
+        "The chat brief led with the conclusion (thesis status and new weighted IVPS vs. $415) and covered what happened, forecast vs. actual, what changed and why, and the next catalyst."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "no-change-update-is-valid",
+      "prompt": "Assume today is 2026-06-10. Setup: copy the provided zenw_vault/coverage directory to ./coverage in your working directory — that is my coverage vault. Anything new on Zenwave Systems (ZENW)? Sanity-check the position. For this run assume: no filings and no company news since the 2026-06-01 build (ZENW is fictional — do not search the web for it; its fiscal Q1 doesn't report until 2026-07-24), and the price is unchanged at $84.00.",
+      "expected_output": "A disciplined 'no changes' update: loads state, finds nothing new since 2026-06-01, skips the forecast-vs-actual diff (no new financials) while saying so, checks the watchlist rows (no new data — none tripped), explicitly concludes no changes with the reasoning, appends a journal entry documenting that, and leaves assumptions.json, the valuation log, and all other artifacts untouched. No invented revisions.",
+      "files": ["evals/files/zenw_vault"],
+      "expectations": [
+        "The skill loaded the dossier, assumptions.json, journal, and valuation_log tail, and correctly established the last update as 2026-06-01 with the next catalyst on 2026-07-24.",
+        "It did not fabricate news, filings, or price moves for the fictional ticker, and respected the instruction not to web-search it.",
+        "The forecast-vs-actual diff was explicitly skipped because no new financials exist since the last update — stated, not silently omitted.",
+        "The conclusion was a reasoned 'no changes' — presented as a valid update outcome with the rationale (no new data, catalyst still ahead, price unchanged), not padded with cosmetic assumption tweaks.",
+        "No probability, vector, or watchlist-threshold edits were made: assumptions.json is byte-identical to the fixture (and therefore no new history/ snapshot was required).",
+        "valuation_log.csv gained no new row, since the model was not re-run.",
+        "journal.md gained a new dated top entry recording the trigger (routine check), the no-changes conclusion and rationale, and the upcoming 2026-07-24 catalyst as the open item.",
+        "strategy_report.md, memo.md, assumption_map.md, the workbook, and scripts/ were not modified.",
+        "The chat brief led with the conclusion (position unchanged, weighted IVPS still $52.42 vs. $84.00, gap about -38%) and named the next catalyst."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "uncovered-ticker-redirects-to-pipeline",
+      "prompt": "Assume today is 2026-06-10. Setup: copy the provided zenw_vault/coverage directory to ./coverage in your working directory — that is my coverage vault (it covers ZENW only). Tesla reported earnings last night — update the TSLA model with the new quarter.",
+      "expected_output": "coverage/TSLA/ does not exist, so the skill stops and offers bav-pipeline for a first build instead of improvising an update. It creates no TSLA artifacts and fabricates no valuation.",
+      "files": ["evals/files/zenw_vault"],
+      "expectations": [
+        "The skill checked for coverage/TSLA/ and reported that TSLA is not a covered position (only ZENW is).",
+        "It stopped rather than running the update procedure, and offered the bav-pipeline skill by name as the path for a first build of TSLA coverage.",
+        "No coverage/TSLA/ directory or files were created, and no TSLA valuation, vectors, or watchlist were fabricated in chat.",
+        "The existing ZENW position was left completely untouched.",
+        "The response did not pretend to know the quarter's numbers; at most it noted that a first build would gather them."
+      ]
+    }
+  ]
+}

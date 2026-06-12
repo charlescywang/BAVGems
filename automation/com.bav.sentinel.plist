@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.bav.sentinel</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PYTHON__</string>
+        <string>__TOOLS__/sentinel.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>__REPO__</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>__PATH__</string>
+        <key>BAV_CLAUDE_CONFIG</key>
+        <string>__HOME__/.claude-bav</string>
+        <key>BAV_REPO</key>
+        <string>__REPO__</string>
+        <key>BAV_SEC_IDENTITY</key>
+        <string>__SECID__</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>__REPO__/coverage/_state/sentinel.log</string>
+    <key>StandardErrorPath</key>
+    <string>__REPO__/coverage/_state/sentinel.log</string>
+</dict>
+</plist>

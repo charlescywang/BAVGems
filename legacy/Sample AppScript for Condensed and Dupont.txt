@@ -1,0 +1,493 @@
+/**
+ * Automates the creation of "Condensed Financials" and "ALT DuPont" tabs
+ * for Advance Auto Parts (AAP) based on the uploaded data structure.
+ */
+
+function createFinancialModels() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // ---------------------------------------------------------
+  // 0. CONFIGURATION & VALIDATION
+  // ---------------------------------------------------------
+  var IS_TAB_NAME = "Income Statement";
+  var BS_TAB_NAME = "Balance Sheet";
+  var CF_TAB_NAME = "Cash Flow";
+  var CONDENSED_TAB_NAME = "Condensed Financials";
+  var DUPONT_TAB_NAME = "ALT DuPont";
+  
+  var HEADER_ROW = 6;
+  var DATA_START_ROW = 7;
+  
+  // Validate Source Tabs
+  var sheetIS = ss.getSheetByName(IS_TAB_NAME);
+  var sheetBS = ss.getSheetByName(BS_TAB_NAME);
+  var sheetCF = ss.getSheetByName(CF_TAB_NAME);
+  
+  if (!sheetIS || !sheetBS || !sheetCF) {
+    SpreadsheetApp.getUi().alert("Error: Missing one or more required tabs (Income Statement, Balance Sheet, Cash Flow).");
+    return;
+  }
+  
+  // Create or Reset Output Tabs
+  var sheetCond = setupSheet(ss, CONDENSED_TAB_NAME);
+  var sheetDupont = setupSheet(ss, DUPONT_TAB_NAME);
+  
+  // Get Source Metadata
+  var lastCol = sheetIS.getLastColumn();
+  var years = sheetIS.getRange(HEADER_ROW, 2, 1, lastCol - 1).getValues()[0];
+  var numYears = years.length;
+  
+  // ---------------------------------------------------------
+  // 1. BUILD "CONDENSED FINANCIALS" TAB
+  // ---------------------------------------------------------
+  
+  // --- 1A. HEADERS ---
+  sheetCond.getRange("A1").setValue("A. Condensed Financials Model").setFontWeight("bold");
+  sheetCond.getRange("A2").setValue("All figures in USD Millions");
+  
+  // Set Year Headers (Starting in Column C)
+  sheetCond.getRange(HEADER_ROW, 3, 1, numYears).setValues([years]).setFontWeight("bold").setHorizontalAlignment("center");
+  sheetCond.getRange(HEADER_ROW, 1).setValue("Line Item").setFontWeight("bold");
+  sheetCond.getRange(HEADER_ROW, 2).setValue("Classification").setFontWeight("bold");
+  
+  // --- 1B. CONDENSED INCOME STATEMENT ---
+  var row = DATA_START_ROW;
+  
+  // Helper to find source rows
+  var findRow = function(sheet, searchStr) {
+    var data = sheet.getRange("A1:A" + sheet.getLastRow()).getValues();
+    for (var i = 0; i < data.length; i++) {
+      if (data[i][0] && data[i][0].toString().toLowerCase().indexOf(searchStr.toLowerCase()) !== -1) {
+        return i + 1;
+      }
+    }
+    return -1;
+  };
+  
+  // Source Row Indices
+  var rowNetSales = findRow(sheetIS, "Net Sales");
+  var rowNetIncome = findRow(sheetIS, "Net Income (Loss) (GAAP)") > 0 ? findRow(sheetIS, "Net Income (Loss) (GAAP)") : findRow(sheetIS, "Net Income");
+  var rowTax = findRow(sheetIS, "Provision for Income Taxes");
+  
+  // Interest Logic (Fallback included)
+  var rowIntExp = findRow(sheetIS, "Interest Expense");
+  var rowIntInc = findRow(sheetIS, "Interest Income"); // Often "Other Income" in AAP
+  if (rowIntInc === -1) rowIntInc = findRow(sheetIS, "Other Income"); // Fallback for AAP
+  
+  // Hardcoded Fallback for Interest if NOT found in sheet (AAP Specific Context)
+  // If the row exists, we use the formula. If not, we would use these values (placeholder logic).
+  var fallbackInterest = [-39.9, -46.9, -37.8, -51.1, -88.1, -81.0]; 
+  
+  var labelsIS = [
+    "Revenue", 
+    "Net Income", 
+    "Interest Expense", 
+    "Interest Income", 
+    "Net Interest Expense", 
+    "Pretax Income", 
+    "Tax Expense", 
+    "Effective Tax Rate", 
+    "Net Interest after Tax", 
+    "NOPAT"
+  ];
+  
+  // Write Labels
+  labelsIS.forEach(function(lbl, i) {
+    sheetCond.getRange(row + i, 1).setValue(lbl);
+  });
+  
+  // Write Formulas (Column C to End)
+  for (var c = 0; c < numYears; c++) {
+    var colLetter = colName(3 + c); // Target C, D, E...
+    var sourceColLetter = colName(2 + c); // Source B, C, D...
+    
+    // Revenue
+    sheetCond.getRange(row, 3 + c).setFormula(`='${IS_TAB_NAME}'!${sourceColLetter}${rowNetSales}`);
+    
+    // Net Income
+    sheetCond.getRange(row + 1, 3 + c).setFormula(`='${IS_TAB_NAME}'!${sourceColLetter}${rowNetIncome}`);
+    
+    // Interest Expense (Force Positive ABS)
+    if (rowIntExp > 0) {
+      sheetCond.getRange(row + 2, 3 + c).setFormula(`=ABS('${IS_TAB_NAME}'!${sourceColLetter}${rowIntExp})`);
+    } else {
+      // Fallback injection if row missing
+      sheetCond.getRange(row + 2, 3 + c).setValue(Math.abs(fallbackInterest[c] || 0));
+      sheetCond.getRange(row + 2, 2).setValue("Source: Manual Fallback");
+    }
+    
+    // Interest Income
+    if (rowIntInc > 0) {
+      sheetCond.getRange(row + 3, 3 + c).setFormula(`='${IS_TAB_NAME}'!${sourceColLetter}${rowIntInc}`);
+    } else {
+      sheetCond.getRange(row + 3, 3 + c).setValue(0);
+    }
+    
+    // Net Interest Expense (Exp - Inc)
+    sheetCond.getRange(row + 4, 3 + c).setFormula(`=${colLetter}${row + 2} - ${colLetter}${row + 3}`);
+    
+    // Pretax Income (Net Income + Tax) - approximation for model flow
+    // Ideally link to Pretax line, but prompt asks for derivation flow for NOPAT
+    // Let's link Tax first to define Pretax accurately.
+    sheetCond.getRange(row + 6, 3 + c).setFormula(`='${IS_TAB_NAME}'!${sourceColLetter}${rowTax}`); // Tax
+    sheetCond.getRange(row + 5, 3 + c).setFormula(`=${colLetter}${row + 1} + ${colLetter}${row + 6}`); // Pretax = NI + Tax
+    
+    // Effective Tax Rate
+    sheetCond.getRange(row + 7, 3 + c).setFormula(`=IFERROR(${colLetter}${row + 6} / ${colLetter}${row + 5}, 0)`);
+    sheetCond.getRange(row + 7, 3 + c).setNumberFormat("0.0%");
+    
+    // Net Interest After Tax
+    sheetCond.getRange(row + 8, 3 + c).setFormula(`=${colLetter}${row + 4} * (1 - ${colLetter}${row + 7})`);
+    
+    // NOPAT
+    sheetCond.getRange(row + 9, 3 + c).setFormula(`=${colLetter}${row + 1} + ${colLetter}${row + 8}`);
+  }
+  
+  // Format IS Section
+  sheetCond.getRange(row, 1, 10, numYears + 2).setBorder(true, true, true, true, null, null);
+  row += 12; // Spacer
+  
+  // --- 1C. BALANCE SHEET CLASSIFICATION ---
+  sheetCond.getRange(row, 1).setValue("B. Balance Sheet Classification").setFontWeight("bold");
+  row++;
+  
+  // Copy Source Header
+  sheetCond.getRange(row, 1).setValue("Line Item").setFontWeight("bold");
+  sheetCond.getRange(row, 2).setValue("Classification").setFontWeight("bold");
+  sheetCond.getRange(row, 3, 1, numYears).setValues([years]).setFontWeight("bold").setHorizontalAlignment("center");
+  var startRowClass = row + 1;
+  
+  // Iterate ALL Balance Sheet Rows
+  var bsData = sheetBS.getRange(DATA_START_ROW, 1, sheetBS.getLastRow() - DATA_START_ROW + 1, lastCol).getValues();
+  var classData = [];
+  var classFormulas = [];
+  var validationRules = [];
+  var equityRowIndexSource = -1; // To find specific row for direct link later
+  
+  for (var i = 0; i < bsData.length; i++) {
+    var lineItem = bsData[i][0].toString();
+    if (lineItem === "") continue; // Skip empty rows
+    
+    // Track Equity Row for later direct link
+    if (lineItem.includes("Total Stockholders' Equity") || lineItem.includes("Total Shareholders' Equity")) {
+      equityRowIndexSource = DATA_START_ROW + i;
+    }
+    
+    // Auto-Classification Logic
+    var classification = "";
+    var lowerItem = lineItem.toLowerCase();
+    
+    if (lowerItem.includes("total")) {
+      classification = "Exclude / Total";
+    } else if (lowerItem.includes("equity") || lowerItem.includes("stock") || lowerItem.includes("capital") || lowerItem.includes("retained earnings")) {
+      classification = "Equity";
+    } else if (lowerItem.includes("cash") || lowerItem.includes("marketable") || lowerItem.includes("investment")) {
+      classification = "Financial Asset";
+    } else if (lowerItem.includes("debt") || lowerItem.includes("borrowing") || lowerItem.includes("notes") || lowerItem.includes("finance lease")) {
+      classification = "Financial Liability";
+    } else if (lowerItem.includes("held for sale")) {
+       // Ambiguous, typically Operating if generic
+       classification = "Operating Working Capital Asset";
+    } else {
+      // Operating Logic
+      // We need to know if it's Asset or Liab, Current or Non-Current.
+      // This is hard to do perfectly with just text, but we approximate based on section headers usually found in files.
+      // For this script, we use the prompt's rules strictly.
+      
+      // Heuristic: Check source section headers? Hard in flat array.
+      // Fallback: Default to Operating. User can adjust.
+      // We will try to detect "Liabilities" or "Assets" based on surrounding context if possible, 
+      // but simpler to use specific keywords or default.
+      
+      if (lowerItem.includes("payable") || lowerItem.includes("accrued") || lowerItem.includes("liabilities")) {
+         if (lowerItem.includes("non-current") || lowerItem.includes("long-term")) {
+           classification = "Operating Long-Term Liability";
+         } else {
+           classification = "Operating Working Capital Liability";
+         }
+      } else {
+         if (lowerItem.includes("non-current") || lowerItem.includes("long-term") || lowerItem.includes("goodwill") || lowerItem.includes("intangible") || lowerItem.includes("property") || lowerItem.includes("equipment")) {
+           classification = "Operating Long-Term Asset";
+         } else {
+           classification = "Operating Working Capital Asset";
+         }
+      }
+    }
+    
+    classData.push([lineItem, classification]);
+    
+    // Formula for Data: ='Balance Sheet'!B7
+    var rowFormulas = [];
+    for (var c = 0; c < numYears; c++) {
+       rowFormulas.push(`='${BS_TAB_NAME}'!${colName(2 + c)}${DATA_START_ROW + i}`);
+    }
+    classFormulas.push(rowFormulas);
+  }
+  
+  // Write Classification Table
+  var numClassRows = classData.length;
+  sheetCond.getRange(startRowClass, 1, numClassRows, 2).setValues(classData);
+  sheetCond.getRange(startRowClass, 3, numClassRows, numYears).setFormulas(classFormulas);
+  
+  // Set Validation Dropdowns
+  var rangeClass = sheetCond.getRange(startRowClass, 2, numClassRows, 1);
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList([
+      "Financial Asset", "Financial Liability", 
+      "Operating Working Capital Asset", "Operating Working Capital Liability",
+      "Operating Long-Term Asset", "Operating Long-Term Liability",
+      "Equity", "Exclude / Total"
+    ])
+    .build();
+  rangeClass.setDataValidation(rule);
+  
+  var lastClassRow = startRowClass + numClassRows - 1;
+  row = lastClassRow + 3; // Spacer
+  
+  // --- 1D. CONDENSED BALANCE SHEET (AGGREGATION) ---
+  sheetCond.getRange(row, 1).setValue("C. Condensed Balance Sheet").setFontWeight("bold");
+  row++;
+  sheetCond.getRange(row, 3, 1, numYears).setValues([years]).setFontWeight("bold").setHorizontalAlignment("center"); // Years
+  row++;
+  
+  var startRowAgg = row;
+  var itemsAgg = [
+    { label: "Operating Working Capital Assets", type: "Operating Working Capital Asset", logic: "SUMIF" },
+    { label: "Operating Working Capital Liabilities", type: "Operating Working Capital Liability", logic: "SUMIF" },
+    { label: "Net Operating Working Capital (NOWC)", type: "CALC", formula: "ROW-2 - ROW-1" },
+    { label: "Operating Long-Term Assets", type: "Operating Long-Term Asset", logic: "SUMIF" },
+    { label: "Operating Long-Term Liabilities", type: "Operating Long-Term Liability", logic: "SUMIF" },
+    { label: "Net Operating Long-Term Assets", type: "CALC", formula: "ROW-2 - ROW-1" },
+    { label: "Total Net Operating Assets (NOA)", type: "CALC", formula: "NOWC + NOLT" }, // Special Logic
+    { label: "Financial Liabilities", type: "Financial Liability", logic: "SUMIF" },
+    { label: "Financial Assets", type: "Financial Asset", logic: "SUMIF" },
+    { label: "Net Debt", type: "CALC", formula: "ROW-2 - ROW-1" },
+    { label: "Equity", type: "DIRECT", logic: "LINK" },
+    { label: "Total Capital", type: "CALC", formula: "NetDebt + Equity" },
+    { label: "Check", type: "CHECK", formula: "ABS(TotalCap - NOA) < 1" }
+  ];
+  
+  // Mapping row indices for calculations
+  var rNowc, rNolt, rNoa, rNetDebt, rEquity, rTotalCap;
+  
+  for (var i = 0; i < itemsAgg.length; i++) {
+    var item = itemsAgg[i];
+    var currentRow = startRowAgg + i;
+    sheetCond.getRange(currentRow, 1).setValue(item.label);
+    
+    if (item.label.includes("(NOWC)")) rNowc = currentRow;
+    if (item.label.includes("Net Operating Long-Term")) rNolt = currentRow;
+    if (item.label.includes("(NOA)")) rNoa = currentRow;
+    if (item.label.includes("Net Debt")) rNetDebt = currentRow;
+    if (item.label.includes("Equity")) rEquity = currentRow;
+    if (item.label.includes("Total Capital")) rTotalCap = currentRow;
+    
+    for (var c = 0; c < numYears; c++) {
+      var col = 3 + c;
+      var colLet = colName(col);
+      var rangeClassCol = `$B$${startRowClass}:$B$${lastClassRow}`;
+      var rangeDataCol = `${colLet}$${startRowClass}:${colLet}$${lastClassRow}`;
+      
+      if (item.logic === "SUMIF") {
+        sheetCond.getRange(currentRow, col).setFormula(`=SUMIF(${rangeClassCol}, "${item.type}", ${rangeDataCol})`);
+      } else if (item.type === "CALC") {
+        if (item.label.includes("(NOWC)")) {
+           sheetCond.getRange(currentRow, col).setFormula(`=${colLet}${currentRow-2} - ${colLet}${currentRow-1}`);
+        } else if (item.label.includes("Net Operating Long-Term")) {
+           sheetCond.getRange(currentRow, col).setFormula(`=${colLet}${currentRow-2} - ${colLet}${currentRow-1}`);
+        } else if (item.label.includes("(NOA)")) {
+           sheetCond.getRange(currentRow, col).setFormula(`=${colLet}${rNowc} + ${colLet}${rNolt}`);
+        } else if (item.label.includes("Net Debt")) {
+           sheetCond.getRange(currentRow, col).setFormula(`=${colLet}${currentRow-2} - ${colLet}${currentRow-1}`);
+        } else if (item.label.includes("Total Capital")) {
+           sheetCond.getRange(currentRow, col).setFormula(`=${colLet}${rNetDebt} + ${colLet}${rEquity}`);
+        }
+      } else if (item.type === "DIRECT") {
+        // Direct Link to Source Balance Sheet Equity Row
+        var sourceCol = colName(2 + c);
+        if (equityRowIndexSource > 0) {
+          sheetCond.getRange(currentRow, col).setFormula(`='${BS_TAB_NAME}'!${sourceCol}${equityRowIndexSource}`);
+        } else {
+          sheetCond.getRange(currentRow, col).setValue(0);
+        }
+      } else if (item.type === "CHECK") {
+        sheetCond.getRange(currentRow, col).setFormula(`=IF(ABS(${colLet}${rTotalCap} - ${colLet}${rNoa}) < 1.0, "OK", "CHECK")`);
+      }
+    }
+  }
+  
+  // Format Aggregation Section
+  sheetCond.getRange(startRowAgg, 1, itemsAgg.length, numYears + 2).setBorder(true, true, true, true, null, null);
+  
+  
+  // ---------------------------------------------------------
+  // 2. BUILD "ALT DUPONT" TAB
+  // ---------------------------------------------------------
+  
+  sheetDupont.getRange("A1").setValue("ALT DuPont Analysis").setFontWeight("bold");
+  sheetDupont.getRange(HEADER_ROW, 2, 1, numYears).setValues([years]).setFontWeight("bold").setHorizontalAlignment("center");
+  sheetDupont.getRange(HEADER_ROW, 1).setValue("Metric").setFontWeight("bold");
+  
+  var dupontLabels = [
+    "Revenue", "Revenue Growth", "NOPAT", "NOPAT Margin", 
+    "Average NOA", "Asset Turnover", "RNOA", 
+    "Average Net Debt", "Net Interest After Tax", "After-tax Cost of Debt", 
+    "Spread", "Average Equity", "Net Financial Leverage", 
+    "Financial Leverage Gain", "ROE (Decomposed)", "Net Income", "Actual ROE", "Check"
+  ];
+  
+  var dRow = DATA_START_ROW;
+  dupontLabels.forEach(function(l, i){
+    sheetDupont.getRange(dRow + i, 1).setValue(l);
+  });
+  
+  // Row Mapping for DuPont Formulas
+  var drRev = dRow;
+  var drGrow = dRow + 1;
+  var drNopat = dRow + 2;
+  var drMar = dRow + 3;
+  var drAvgNoa = dRow + 4;
+  var drTurn = dRow + 5;
+  var drRnoa = dRow + 6;
+  var drAvgNd = dRow + 7;
+  var drNiat = dRow + 8;
+  var drCod = dRow + 9;
+  var drSpread = dRow + 10;
+  var drAvgEq = dRow + 11;
+  var drLev = dRow + 12;
+  var drGain = dRow + 13;
+  var drRoeDec = dRow + 14;
+  var drNi = dRow + 15;
+  var drRoeAct = dRow + 16;
+  var drCheck = dRow + 17;
+  
+  // Identify Link Rows in Condensed Tab
+  // We know relative positions in Condensed:
+  // Revenue: Row 7 (DATA_START_ROW)
+  // NOPAT: Row 16 (DATA_START_ROW + 9)
+  // NIAT: Row 15 (DATA_START_ROW + 8)
+  // Net Income: Row 8
+  // NOA: Row for (NOA) in Aggregation
+  // Net Debt: Row for (Net Debt) in Aggregation
+  // Equity: Row for (Equity) in Aggregation
+  
+  var crRev = DATA_START_ROW;
+  var crNi = DATA_START_ROW + 1;
+  var crNiat = DATA_START_ROW + 8;
+  var crNopat = DATA_START_ROW + 9;
+  
+  // Need absolute rows for NOA, ND, Equity in Condensed
+  // rNoa, rNetDebt, rEquity are calculated above relative to Condensed Sheet
+  
+  // Check Time Series Direction
+  // 2019 < 2024, so Ascending. Oldest is first column (Col B).
+  // Logic: If Col B is oldest, it has no "Previous Year", so formulas = "n/a".
+  
+  for (var c = 0; c < numYears; c++) {
+    var dupontCol = colName(2 + c); // B, C, D...
+    var condCol = colName(3 + c);   // C, D, E...
+    var prevCondCol = colName(3 + c - 1);
+    
+    // Direct Links
+    sheetDupont.getRange(drRev, 2 + c).setFormula(`='${CONDENSED_TAB_NAME}'!${condCol}${crRev}`);
+    sheetDupont.getRange(drNopat, 2 + c).setFormula(`='${CONDENSED_TAB_NAME}'!${condCol}${crNopat}`);
+    sheetDupont.getRange(drNiat, 2 + c).setFormula(`='${CONDENSED_TAB_NAME}'!${condCol}${crNiat}`);
+    sheetDupont.getRange(drNi, 2 + c).setFormula(`='${CONDENSED_TAB_NAME}'!${condCol}${crNi}`);
+    
+    // Calculations requiring T-1
+    if (c === 0) {
+      // Oldest Year -> n/a
+      var naRows = [drGrow, drAvgNoa, drTurn, drRnoa, drAvgNd, drCod, drSpread, drAvgEq, drLev, drGain, drRoeDec, drRoeAct, drCheck];
+      naRows.forEach(r => sheetDupont.getRange(r, 2 + c).setValue("n/a"));
+      
+      // Margins can still be calc'd for oldest year
+       sheetDupont.getRange(drMar, 2 + c).setFormula(`=${dupontCol}${drNopat} / ${dupontCol}${drRev}`);
+       
+       // Calc Actual ROE for oldest year? Usually needs Avg Equity. So n/a.
+       
+    } else {
+      // Growth
+      sheetDupont.getRange(drGrow, 2 + c).setFormula(`(${dupontCol}${drRev} / '${CONDENSED_TAB_NAME}'!${prevCondCol}${crRev}) - 1`);
+      
+      // Margin
+      sheetDupont.getRange(drMar, 2 + c).setFormula(`=${dupontCol}${drNopat} / ${dupontCol}${drRev}`);
+      
+      // Avg NOA
+      sheetDupont.getRange(drAvgNoa, 2 + c).setFormula(`=AVERAGE('${CONDENSED_TAB_NAME}'!${condCol}${rNoa}, '${CONDENSED_TAB_NAME}'!${prevCondCol}${rNoa})`);
+      
+      // Asset Turnover
+      sheetDupont.getRange(drTurn, 2 + c).setFormula(`=${dupontCol}${drRev} / ${dupontCol}${drAvgNoa}`);
+      
+      // RNOA
+      sheetDupont.getRange(drRnoa, 2 + c).setFormula(`=${dupontCol}${drMar} * ${dupontCol}${drTurn}`);
+      
+      // Avg Net Debt
+      sheetDupont.getRange(drAvgNd, 2 + c).setFormula(`=AVERAGE('${CONDENSED_TAB_NAME}'!${condCol}${rNetDebt}, '${CONDENSED_TAB_NAME}'!${prevCondCol}${rNetDebt})`);
+      
+      // Cost of Debt (NIAT / Avg Net Debt)
+      sheetDupont.getRange(drCod, 2 + c).setFormula(`=IF(${dupontCol}${drAvgNd}=0, 0, ${dupontCol}${drNiat} / ${dupontCol}${drAvgNd})`);
+      
+      // Spread
+      sheetDupont.getRange(drSpread, 2 + c).setFormula(`=${dupontCol}${drRnoa} - ${dupontCol}${drCod}`);
+      
+      // Avg Equity
+      sheetDupont.getRange(drAvgEq, 2 + c).setFormula(`=AVERAGE('${CONDENSED_TAB_NAME}'!${condCol}${rEquity}, '${CONDENSED_TAB_NAME}'!${prevCondCol}${rEquity})`);
+      
+      // Leverage
+      sheetDupont.getRange(drLev, 2 + c).setFormula(`=${dupontCol}${drAvgNd} / ${dupontCol}${drAvgEq}`);
+      
+      // Gain
+      sheetDupont.getRange(drGain, 2 + c).setFormula(`=${dupontCol}${drSpread} * ${dupontCol}${drLev}`);
+      
+      // ROE Decomposed
+      sheetDupont.getRange(drRoeDec, 2 + c).setFormula(`=${dupontCol}${drRnoa} + ${dupontCol}${drGain}`);
+      
+      // Actual ROE
+      sheetDupont.getRange(drRoeAct, 2 + c).setFormula(`=${dupontCol}${drNi} / ${dupontCol}${drAvgEq}`);
+      
+      // Check
+      sheetDupont.getRange(drCheck, 2 + c).setFormula(`=${dupontCol}${drRoeDec} - ${dupontCol}${drRoeAct}`);
+      // Conditional formatting for check
+      var ruleCheck = SpreadsheetApp.newConditionalFormatRule()
+        .whenFormulaSatisfied(`=ABS(${dupontCol}${drCheck}) > 0.0001`)
+        .setBackground("#FFCCCC") // Red warning
+        .setRanges([sheetDupont.getRange(drCheck, 2 + c)])
+        .build();
+      var rules = sheetDupont.getConditionalFormatRules();
+      rules.push(ruleCheck);
+      sheetDupont.setConditionalFormatRules(rules);
+    }
+  }
+  
+  // Format Percentages
+  var pctRows = [drGrow, drMar, drRnoa, drCod, drSpread, drGain, drRoeDec, drRoeAct];
+  pctRows.forEach(r => sheetDupont.getRange(r, 2, 1, numYears).setNumberFormat("0.0%"));
+  sheetDupont.getRange(drTurn, 2, 1, numYears).setNumberFormat("0.00");
+  sheetDupont.getRange(drLev, 2, 1, numYears).setNumberFormat("0.00");
+
+  Logger.log("Financial Models Created Successfully.");
+}
+
+// ---------------------------------------------------------
+// HELPER FUNCTIONS
+// ---------------------------------------------------------
+
+function setupSheet(ss, name) {
+  var sheet = ss.getSheetByName(name);
+  if (sheet) {
+    sheet.clear();
+  } else {
+    sheet = ss.insertSheet(name);
+  }
+  return sheet;
+}
+
+function colName(n) {
+  var s = "";
+  while (n > 0) {
+    n--;
+    s = String.fromCharCode(65 + (n % 26)) + s;
+    n = Math.floor(n / 26);
+  }
+  return s;
+}

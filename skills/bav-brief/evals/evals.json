@@ -1,0 +1,55 @@
+{
+  "skill_name": "bav-brief",
+  "_comment": "Fixture: files/vault is a frozen 3-ticker SYNTHETIC coverage snapshot (fictional companies; never copy real research into fixtures) — ACME stale-but-valued (last update 2026-03-08, legacy-ish JSON, Q1 2026 earnings unprocessed), BOLT needs-rebuild (vectors but no recorded valuation, empty scripts/), CRUX stub (workbook only; no assumptions.json). With 'today' pinned to 2026-06-10, ACME is both >90 days old and past a known earnings date. The skill is read-only: the strongest expectations here are about NOT writing. The fixture vault must be (re)generated synthetically to match this description. See ../bav-pipeline/evals/README.md for how to run.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "universe-brief-staleness-and-needs-rebuild",
+      "prompt": "Assume today is 2026-06-10. Setup: copy the provided vault/coverage directory to ./coverage in your working directory — that is my coverage vault. Where do we stand across the coverage book? Give me the full status brief.",
+      "expected_output": "Read-only universe brief: the table (ticker, weighted IVPS, price with as-of date, gap, probabilities, last update, status), staleness computed honestly against 2026-06-10, a needs-attention section (ACME stale with Apr earnings pending; BOLT and CRUX needs-rebuild with their specific gaps), and prioritized suggested actions distinguishing bav-update from bav-pipeline per position. Zero file writes; no default web searching.",
+      "files": ["evals/files/vault"],
+      "expectations": [
+        "No file under coverage/ was created, modified, or deleted — the brief is strictly read-only.",
+        "The brief includes a table covering all three tickers with weighted IVPS, price labeled with its as-of date (ACME $45.00 as of 2026-03-08 — flagged as a stale price, not presented as current), gap, probabilities, last update, and status.",
+        "ACME was reported as stale for the right reasons: last_update 2026-03-08 is more than 90 days before 2026-06-10 AND Q1 2026 earnings (late Apr 2026) happened after the last update and are unprocessed.",
+        "BOLT was called out as having vectors but NO recorded valuation (its dossier's documented data gap) — the brief did not invent or imply a current BOLT IVPS.",
+        "CRUX was called out as a stub missing core artifacts (no assumptions.json, no strategy report) and the recommendation for CRUX was a full /bav-pipeline rebuild rather than treating it as merely stale.",
+        "A needs-attention section surfaced the pending catalysts that have passed (all three positions predate the April/May 2026 earnings) and the aged open questions.",
+        "Suggested actions were prioritized with reasons and used the right tool per position (bav-update where a position exists to refresh; bav-pipeline where artifacts are missing).",
+        "The skill did not web-search every name by default — it reported from the data on disk and at most OFFERED a live check.",
+        "No valuation, probability, or KPI number appears in the brief that does not come from the vault files."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "single-ticker-deep-brief",
+      "prompt": "Assume today is 2026-06-10. Setup: copy the provided vault/coverage directory to ./coverage in your working directory — that is my coverage vault. Brief me on ACME before my meeting — where do we stand, how did we get here, and what would change our mind?",
+      "expected_output": "Single-ticker deep brief from the dossier, journal, valuation log, and (absent) memo: stance paragraph with the dated weighted IVPS vs. price, valuation trajectory (a single initial-build run), watchlist state as of the last update, what-would-change-our-mind from the dossier's uncertainties, and an honest freshness assessment concluding an update is warranted. Read-only.",
+      "files": ["evals/files/vault"],
+      "expectations": [
+        "No file under coverage/ was created, modified, or deleted.",
+        "The stance paragraph stated the thesis with weighted IVPS $31.20 vs. price $45.00 explicitly dated 2026-03-08 (not presented as today's), with the per-scenario values (Bear ~$14 / Base ~$31 / Bull ~$52) and probabilities 25/50/25 available from the vault.",
+        "The valuation trajectory was presented from valuation_log.csv and honestly noted there is only one run on record (initial build) — no fabricated history.",
+        "The watchlist section reported each KPI against its triggers as of the last update (e.g. the dossier's Widgets-growth and capex rows), without inventing fresher readings.",
+        "The what-would-change-our-mind section drew on the dossier's key uncertainties and open questions (low-cost entrant share capture, the tariff-exemption ruling timing, capacity-expansion returns) and named the next catalyst.",
+        "Freshness was assessed against 2026-06-10: last update 2026-03-08, Q1 2026 earnings reported since and unprocessed, position stale — with a recommendation to run bav-update for ACME.",
+        "The brief acknowledged the position's known artifact gaps where relevant (e.g. legacy-schema assumptions and the strategy report predating the input/output separation, per the journal) rather than overstating its cleanliness.",
+        "Nothing in the brief came from general knowledge — only from the vault files, with any post-2026-03-08 development handled as 'not yet processed'."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "did-they-beat-defers-to-update",
+      "prompt": "Assume today is 2026-06-10. Setup: copy the provided vault/coverage directory to ./coverage in your working directory — that is my coverage vault. Quick one: did ACME beat last quarter? What did our model expect versus what they printed?",
+      "expected_output": "The vault is as-of 2026-03-08 and contains no Q1 2026 actuals, so the skill says exactly that: it can state what the model expected (Base Y1 growth 10%, margin 17%) but not what was printed, declines to answer the beat/miss from general knowledge, and offers to run bav-update (or a live check) to process the quarter. No files modified.",
+      "files": ["evals/files/vault"],
+      "expectations": [
+        "The response stated that the vault is as-of its last update (2026-03-08) and that Q1 2026 actuals are not in the files, so beat/miss cannot be answered from the vault.",
+        "It did NOT answer the beat question from general knowledge or invent reported figures for the quarter.",
+        "It DID report the model's expectations from the vault (Base Year-1 revenue growth 10% and NOPAT margin 17%, and that Widgets growth is the key watchlist metric) as the 'what we expected' half.",
+        "It offered the concrete next step: run bav-update on ACME to pull the quarter and do the forecast-vs-actual diff (or an explicit live check if the user wants one now).",
+        "No file under coverage/ was created, modified, or deleted."
+      ]
+    }
+  ]
+}

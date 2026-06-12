@@ -1,0 +1,11 @@
+ZENW fixture consistency report
+========================================
+FY2025 anchor: revenue 11,400  NOPAT 1,873.2  margin 16.432%
+FY2025 NOWC 114  NOLA 3,931  NOA 4,045  NetDebt -2,650  Equity 6,695
+NOWC/Sales 0.010   NOLA/Sales 0.345   leverage (ND/TC) -0.655
+Hist avg after-tax CoD (DuPont) 0.0354; model B8 0.0291
+BS balances, CF ties, NOA=Total Capital, DuPont reconciles: all asserted OK
+Bear: Ke 0.1070  terminal RNOA 0.134 (1.25x CoE, target 1.25x)  IVPS 16.93
+Base: Ke 0.0995  terminal RNOA 0.199 (2.00x CoE, target 2.0x)  IVPS 46.59
+Bull: Ke 0.0945  terminal RNOA 0.283 (3.00x CoE, target 3.0x)  IVPS 99.55
+Weighted IVPS 52.42 vs price 84.0 -> gap -37.6%

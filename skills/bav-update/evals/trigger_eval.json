@@ -1,0 +1,20 @@
+[
+  {"query": "MSFT reported earnings last night, update the model and tell me if our thesis still holds", "should_trigger": true},
+  {"query": "ok new idea: I want to start coverage on Costco (COST). full workup — strategy review, pull the financials, build the model, the works", "should_trigger": false},
+  {"query": "where do we stand across the coverage book? anything stale or about to report that I should worry about?", "should_trigger": false},
+  {"query": "brief me on GOOGL before my 9am — what's our number vs the price and what's changed since we built it?", "should_trigger": false},
+  {"query": "can you value NVDA for me with a residual income model? bull/base/bear scenarios like we usually do", "should_trigger": false},
+  {"query": "AAPL just filed their 10-Q this morning. refresh the valuation and check the KPI watchlist against the new numbers", "should_trigger": true},
+  {"query": "the SHOP model is busted — the balance sheet classifications are all messed up and the checks don't tie. just rebuild it from scratch", "should_trigger": false},
+  {"query": "what's the latest valuation we have on file for microsoft, and when did we last touch the position?", "should_trigger": false},
+  {"query": "run a DCF on Home Depot for me, I'm curious what it's actually worth", "should_trigger": false},
+  {"query": "build a DuPont decomposition for Deere off their last five 10-Ks — I want RNOA vs leverage broken out", "should_trigger": false},
+  {"query": "googl q1 just dropped, fold it into our model and tell me whether the bear case got stronger", "should_trigger": true},
+  {"query": "what's TSLA trading at right now?", "should_trigger": false},
+  {"query": "summarize NVIDIA's latest earnings call for me in five bullets", "should_trigger": false},
+  {"query": "I need an LBO model for a private packaging company we're acquiring — debt schedule, sponsor returns waterfall, the usual", "should_trigger": false},
+  {"query": "update the README in the models/ directory to document the new scoring pipeline API", "should_trigger": false},
+  {"query": "add a profit margin column to my portfolio tracker spreadsheet, it's the xlsx in my downloads folder", "should_trigger": false},
+  {"query": "we've never looked at Snowflake before — set SNOW up in the coverage system end to end", "should_trigger": false},
+  {"query": "raise our Bull probability on AMZN to 35% and rerun the numbers — the AWS print justifies it", "should_trigger": true}
+]
