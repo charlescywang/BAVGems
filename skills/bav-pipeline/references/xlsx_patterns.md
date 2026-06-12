@@ -81,6 +81,6 @@ Each stage saves its generators under `coverage/{TICKER}/scripts/` — the full 
 
 ## Reference implementations
 
-- `example_build_script.py` — complete working NVDA build (study the structure, don't copy data).
+- `build_multiples_reference.py` — battle-tested Valuation Multiples builder (split-consistent EPS bases, item-2.02 8-K release dates, formula evaluation); copy and adapt per ticker.
 - `Reference_Parameterized_Model.gs` / `MultiScenario_Parameterized_Model.gs` — the original Google Apps Script implementations; authoritative for model-tab layout and formula semantics. Generate a `.gs` only if the user asks for Google Sheets output, and then modify only `getScenarioConfigs()`.
-- `../templates/Example_Assumptions.json` — legacy v1 example (schema superseded by coverage_schema.md).
+- The public repo's `example/GOOGL_Demo_Integrated_Financials.xlsx` — a full real-data build (illustrative model inputs) showing every tab's finished geometry.
