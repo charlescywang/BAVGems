@@ -46,7 +46,7 @@ Specific edits with provenance: which vector elements, which probabilities, whic
 
 ### 6. Apply
 1. Snapshot assumptions.json → `history/{date}_assumptions.json`; write the new file (`meta.supersedes`, `meta.trigger` set).
-2. Refresh the model: re-run `scripts/build_model.py` with the updated JSON. (Source-tab extension for a new 10-K and the quarterly-section/bridge/quality/guidance appends already happened in step 2 — facts are not gated.) If scripts/ is missing (legacy position), rebuild per the stage references and **persist the scripts this time**.
+2. Refresh the model: re-run `scripts/build_model.py` with the updated JSON, **then `scripts/rebuild_features.py`** — the post-model analytics layer (model-tab extras / terminal-growth link, enterprise DCF, Scenario_Summary terminal-returns + implied-multiples + sensitivity heatmap, the live ICC block) must be re-applied because the model rebuild regenerates Model_\* + Scenario_Summary and drops downstream regions. Run-order: `build_model → apply_model_extras → build_dcf → build_summary_extras → compute_icc → add_icc_block → validate` (rebuild_features does steps 2 onward; all idempotent, none touch the vectors). (Source-tab extension for a new 10-K and the quarterly/bridge/quality/guidance appends already happened in step 2 — facts are not gated.) If scripts/ is missing (legacy position), rebuild per the stage references and **persist the scripts this time** (including `references/lib/` → `coverage/_lib/`).
 3. Recompute results into assumptions.json.
 
 ### 7. Record
