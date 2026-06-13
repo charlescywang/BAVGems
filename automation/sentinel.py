@@ -283,6 +283,20 @@ def main():
             log('another sentinel pass is running — exiting')
             return 2
 
+        # defer if the working tree has in-flight interactive edits — never sweep
+        # an analyst's uncommitted coverage work into an unattended bot commit
+        if not (args.force or DRY):
+            dirty = subprocess.run(
+                ['git', '-C', REPO, 'status', '--porcelain', '--', 'coverage/'],
+                capture_output=True, text=True).stdout.strip()
+            if dirty:
+                n = len(dirty.splitlines())
+                log(f'deferring: {n} uncommitted change(s) under coverage/ — likely an '
+                    f'interactive session in flight; retry next pass')
+                notify(f'deferred — {n} uncommitted coverage change(s) (interactive edits '
+                       f'in flight); commit them, then the sentinel resumes')
+                return 0
+
         state = load_state()
         notices = []
         today = datetime.date.today()
