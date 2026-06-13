@@ -47,12 +47,38 @@ The manual loop taught the lessons this repo is built on — and exposed its own
 export BAV_SEC_IDENTITY="Your Name you@example.com"
 ```
 
-**Install the plugin:**
+**Install the plugin** — pick the scope that fits how you work (skills are discovered when a session **starts**, so open a fresh session after any of these; in the desktop app, the same rules apply to Code sessions, keyed to the project folder you open):
 
 ```bash
-git clone https://github.com/<you>/bav-pipeline
-claude --plugin-dir ./bav-pipeline        # or symlink skills/* into your project's .claude/skills/
+git clone https://github.com/<you>/BAVGems bav-pipeline
 ```
+
+*Per-session* — no install at all, point one session at the plugin:
+
+```bash
+claude --plugin-dir ./bav-pipeline
+```
+
+*Per-project (recommended)* — link the skills into the folder where your vault lives; every session opened on that folder gets the `/bav-` commands:
+
+```bash
+cd /path/to/your/vault-folder
+mkdir -p .claude/skills
+for s in bav-pipeline bav-update bav-news bav-brief; do
+  ln -sfn /path/to/bav-pipeline/skills/$s .claude/skills/$s
+done
+```
+
+*User-global* — make the commands visible from **any** folder on the machine:
+
+```bash
+mkdir -p ~/.claude/skills
+for s in bav-pipeline bav-update bav-news bav-brief; do
+  ln -sfn /path/to/bav-pipeline/skills/$s ~/.claude/skills/$s
+done
+```
+
+One caveat on global installs: visible-everywhere isn't runnable-everywhere. The skills read and write `coverage/` **under the session's working directory** — run them from a random folder and `/bav-brief` finds no coverage there, while `/bav-pipeline` will happily start a brand-new vault wherever you're standing. Keep the habit of opening sessions on your vault folder; the global links just save you from "unknown command" when you forget.
 
 **Start coverage on a first name** (do this in the repo/folder where you want your vault to live — the vault is created at `coverage/` under your working directory):
 
