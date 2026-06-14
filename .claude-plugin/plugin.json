@@ -1,7 +1,7 @@
 {
   "name": "bav-pipeline",
   "description": "Business Analysis & Valuation coverage system — builds and maintains per-ticker equity valuations: strategy analysis, SEC EDGAR data assembly, condensed financials & DuPont decomposition, multi-scenario residual income models with an analytics layer (implied cost of capital, enterprise FCFF/WACC DCF cross-check, 2-D sensitivity heatmaps), plus a persistent Obsidian-compatible coverage vault with incremental earnings-driven updates. Skills: bav-pipeline (full build), bav-update (incremental refresh), bav-news (uncertainty-keyed media sweep), bav-brief (portfolio status).",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "author": {
     "name": "Charles Wang"
   }
