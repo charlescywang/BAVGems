@@ -82,7 +82,7 @@ Each scenario gets its own narrative in its tab (and summarized in Scenario_Summ
 
 ## Scenario_Summary tab
 
-Columns: Metric | Bear | Base | Bull. Sections, all formula-linked to model tabs: valuation outputs (IVPS r51, IV r49, TV r47, ΣPV AE r46, BV r48); key assumptions (Y1/terminal growth & margin from rows 11–12, Ke, beta); terminal-year returns (rows 36–37); probability-weighted IVPS via SUMPRODUCT of editable probability cells (blue); current price (blue) and implied upside/downside; one-line note per scenario.
+Columns: Metric | Bear | Base | Bull. Sections, all formula-linked to model tabs: valuation outputs (IVPS r51, IV r49, TV r47, ΣPV AE r46, BV r48); key assumptions (Y1/terminal growth & margin from rows 11–12, Ke, beta); terminal-year returns (rows 36–37); probability-weighted IVPS via SUMPRODUCT of editable probability cells (blue); current price (blue) and implied upside/downside; one-line note per scenario. This lists the rows `build_model` writes at first build; the post-model feature layer (`build_summary_extras`, output #7) **owns rows 18+** and supersedes the simple terminal-returns/calibration rows with its richer block — so neither downstream code nor the validator may treat those rows as a stable anchor (see *Validator vs. the feature layer* under the run-order section).
 
 ## Post-model outputs
 
@@ -105,6 +105,8 @@ Items 5–8 are an analytics layer ON TOP of the core Model tabs. Because re-run
 > `build_model (build/run) → apply_model_extras → build_dcf → build_summary_extras → compute_icc → add_icc_block → validate`
 
 All steps are idempotent and never touch the forecast vectors. The shared, engine-agnostic math lives in **`references/lib/`** (`icc.py`, `model_extras.py`, `sensitivity.py`) — copy it to `coverage/_lib/` on a build; the per-ticker scripts supply only the engine closure and workbook paths. `bav-update` invokes `rebuild_features.py` automatically after registering an edit; a first build runs it as the final Stage-4 step.
+
+**Validator vs. the feature layer (a hard-won invariant).** The model validator and `build_summary_extras` both touch Scenario_Summary, so they must not collide. `build_summary_extras` **owns rows 18+** — it clears and rewrites them every run, replacing the simple calibration row that `build_model`'s own build writes there (e.g. the terminal-RNOA/CoE ratio) with its richer terminal-returns block. A validator that pins that Scenario_Summary *display* row passes at first build but then **fails on every subsequent run** once `rebuild_features` (hence `build_summary_extras`) has executed — `validate` runs last in the chain, so it sees the overwritten cell. The rule: **pin invariants to SOURCE cells, never to a display cell a later pass owns.** Check the terminal RNOA/CoE engine-tie against the model-tab source cells — terminal RNOA at `Model_*!U37` and Ke at `Model_*!B5` (i.e. `U37/B5` per scenario), the same invariant decoupled from the Scenario_Summary layout. Pin only the rows the feature layer leaves intact (1–16); never anchor on a row the post-model layer regenerates.
 
 ## Return to orchestrator
 The Gate C package: IVPS per scenario + weighted vs. price; terminal RNOA / ROE / RNOA-per-CoE per scenario with calibration verdicts; differentiation check result; segment reconciliation result; unresolved assumption-map gaps.

@@ -12,7 +12,7 @@ Report on the state of `coverage/` without changing anything. File formats are d
 1. Read `coverage/_universe.md` and every `{TICKER}/dossier.md` frontmatter; pull each `valuation_log.csv` tail for trajectory (how the weighted IVPS and gap have moved over the last few runs).
 2. Compute staleness honestly against today's date: `last_update` > 90 days ⇒ stale; a known earnings date or `next_catalyst` in the past ⇒ "events pending" even if < 90 days. Do not web-search every name by default — flag from the data on disk; offer a live check if the user wants it.
 3. **Automation liveness:** report the age of `coverage/_state/heartbeat` (a stale heartbeat means the unattended cadence is dead — say so loudly) and the count + max age of entries in each ticker's `pending_decisions.md` (anything >7 days old is a red flag line of its own).
-3. Output, in order:
+4. Output, in order:
    - **The table:** ticker, weighted IVPS, price (with its as-of date — stale prices mislead, label them), gap, probabilities, last update, status.
    - **Needs attention:** stale positions, pending catalysts, watchlist rows whose last recorded check tripped or neared a trigger, open questions that have aged.
    - **Suggested actions:** which `/bav-update {TICKER}` runs to do first and why.

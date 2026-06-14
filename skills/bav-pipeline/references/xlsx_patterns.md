@@ -19,7 +19,7 @@ This buys auditability (click any cell, trace to source), live updates (correct 
 2. **Map** `{label: (tab, row)}` for every value you'll reference.
 3. **Write formulas** as strings from the map.
 4. **Export the row map** to `coverage/{TICKER}/scripts/rowmap.json` (merge keys across stages) — downstream stages and bav-update rebuild references from it instead of re-discovering.
-5. **Validate** — recompute key outputs in Python from raw data and compare to what the formulas should produce (openpyxl does not evaluate formulas; a written workbook has no cached values until opened in Excel/LibreOffice).
+5. **Validate** — recompute key outputs in Python from raw data and compare to what the formulas should produce (openpyxl does not evaluate formulas; a written workbook has no cached values until opened in Excel/LibreOffice). **Pin invariants to SOURCE cells, never to a display cell a later pass owns.** If an idempotent post-model pass regenerates a region (e.g. `build_summary_extras` rewrites Scenario_Summary rows 18+), a validator anchored on a cell in that region passes at first build but fails after the next rebuild. Validate the underlying invariant against the upstream source — e.g. the terminal RNOA/CoE engine-tie against `Model_*!U37` (terminal RNOA) and `Model_*!B5` (Ke), not against a Scenario_Summary calibration row the feature layer overwrites.
 
 ## Formula patterns
 

@@ -94,7 +94,9 @@ def main():
             cols.append((c, v.date() if isinstance(v, datetime.datetime) else v))
     assert cols, 'no date headers found'
 
-    cik = {'GOOGL': 1652044, 'MU': 723125, 'MSFT': 789019, 'NVDA': 1045810}.get(TICKER)
+    # CIK resolves from the ticker's own dossier.md frontmatter (the canonical source);
+    # the demo ticker is pre-cached so the example runs without a dossier present.
+    cik = {'GOOGL': 1652044}.get(TICKER)
     if cik is None:
         fm = open(os.path.join(TICKER_DIR, 'dossier.md')).read()
         import re
