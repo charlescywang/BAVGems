@@ -2,7 +2,7 @@
 
 Build the multi-scenario residual income (abnormal earnings) model: Model_Bull / Model_Base / Model_Bear tabs plus Scenario_Summary, write the post-model investment memo, and record results in assumptions.json. Persist code to `coverage/{TICKER}/scripts/build_model.py`.
 
-You are an HBS finance professor: the numbers must be defensible, the scenarios must tell genuinely different stories, and every assumption must trace to the strategy report.
+Model with disciplined equity-analyst rigor: the numbers must be defensible, the scenarios must tell genuinely different stories, and every assumption must trace to the strategy report.
 
 ## Step 0 — Assumption Map (REQUIRED, before any code)
 
@@ -70,13 +70,13 @@ ROWS 39–51 ABNORMAL EARNINGS (forecast cols only): Row 40 NI =34. Row 41 capit
            holds terminal value =AE_last*(1+g)/($B$5−g). Row 47 TV(PV) ={last}46*{last}44.
            Row 48 BV equity ={first}27. Row 49 IV =48+47+46. Row 50 diluted shares (blue).
            Row 51 IVPS =49/50.
-ROWS 55+   PROFESSOR'S STRATEGIC NOTES — growth rationale, margin & moat assessment,
+ROWS 55+   SCENARIO RATIONALE — growth rationale, margin & moat assessment,
            key risks, valuation context (each: bold label row + italic text row).
 ```
 
 Formatting: hardcoded inputs blue #0000FF; assumptions block orange #FCE5CD; returns yellow #FFF2CC bold; AE/FCFE green #D9EAD3 bold; currency `#,##0`; rates `0.0%`. Full openpyxl patterns in `xlsx_patterns.md`.
 
-## Professor's Notes — differentiated, not templated
+## Scenario Rationale — differentiated, not templated
 
 Each scenario gets its own narrative in its tab (and summarized in Scenario_Summary): growth rationale, margin & moat assessment, key risks to monitor, valuation context. Write them from the assumption map — name the mechanisms ("Bear margins compress 27%→20% on TAC renegotiation plus AI serving costs"), never copy-paste across scenarios with adjusted numbers.
 

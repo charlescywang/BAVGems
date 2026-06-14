@@ -22,7 +22,7 @@
  *   Rows 19-28:   BALANCE SHEET (Beginning)
  *   Rows 30-37:   INCOME STATEMENT
  *   Rows 39-51:   ABNORMAL EARNINGS & VALUATION
- *   Rows 55+:     PROFESSOR'S STRATEGIC NOTES
+ *   Rows 55+:     SCENARIO RATIONALE
  * ════════════════════════════════════════════════════════════════════════════
  */
 
@@ -89,7 +89,7 @@ function createMultiScenarioModel() {
     buildBalanceSheetSection(modelSheet, config);
     buildIncomeStatementSection(modelSheet, config);
     buildAbnormalEarningsSection(modelSheet, config);
-    buildProfessorNotes(modelSheet, config);
+    buildScenarioRationale(modelSheet, config);
     applyFormatting(modelSheet, config);
   });
   
@@ -471,7 +471,7 @@ function createModelTab() {
   buildBalanceSheetSection(modelSheet, config);
   buildIncomeStatementSection(modelSheet, config);
   buildAbnormalEarningsSection(modelSheet, config);
-  buildProfessorNotes(modelSheet, config);
+  buildScenarioRationale(modelSheet, config);
   applyFormatting(modelSheet, config);
   
   SpreadsheetApp.flush();
@@ -1207,14 +1207,14 @@ function buildAbnormalEarningsSection(sheet, config) {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════
- * SECTION 6: PROFESSOR'S STRATEGIC NOTES (Rows 55+)
+ * SECTION 6: SCENARIO RATIONALE (Rows 55+)
  * ════════════════════════════════════════════════════════════════════════════
  */
-function buildProfessorNotes(sheet, config) {
+function buildScenarioRationale(sheet, config) {
   const notes = config.strategic.notes;
   const scenarioName = config.strategic.name || 'Base';
   
-  sheet.getRange('A55').setValue(`PROFESSOR'S STRATEGIC NOTES — ${scenarioName.toUpperCase()} CASE`);
+  sheet.getRange('A55').setValue(`SCENARIO RATIONALE — ${scenarioName.toUpperCase()} CASE`);
   
   sheet.getRange('A57').setValue('Growth Assumption Rationale:');
   sheet.getRange('A58').setValue(notes.growthRationale);
@@ -1321,7 +1321,7 @@ function applyFormatting(sheet, config) {
   sheet.getRange(`A42:${lastFC}42`).setBackground('#D9EAD3').setFontWeight('bold');
   sheet.getRange(`A43:${lastFC}43`).setBackground('#D9EAD3').setFontWeight('bold');
 
-  // Italic formatting for Professor's Notes content
+  // Italic formatting for Scenario Rationale content
   ['A58', 'A61', 'A64', 'A67'].forEach(cell => {
     sheet.getRange(cell).setFontStyle('italic');
   });
@@ -1407,7 +1407,7 @@ function createSingleScenario(scenarioName) {
   buildBalanceSheetSection(modelSheet, config);
   buildIncomeStatementSection(modelSheet, config);
   buildAbnormalEarningsSection(modelSheet, config);
-  buildProfessorNotes(modelSheet, config);
+  buildScenarioRationale(modelSheet, config);
   applyFormatting(modelSheet, config);
   
   SpreadsheetApp.flush();

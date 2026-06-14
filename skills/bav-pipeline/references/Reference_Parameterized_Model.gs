@@ -15,7 +15,7 @@
  * Rows 19-28:   BALANCE SHEET (Beginning)
  * Rows 30-37:   INCOME STATEMENT
  * Rows 39-51:   ABNORMAL EARNINGS & VALUATION
- * Rows 55+:     PROFESSOR'S STRATEGIC NOTES
+ * Rows 55+:     SCENARIO RATIONALE
  * ════════════════════════════════════════════════════════════════════════════
  */
 
@@ -58,7 +58,7 @@ function createModelTab() {
   buildBalanceSheetSection(modelSheet, config);
   buildIncomeStatementSection(modelSheet, config);
   buildAbnormalEarningsSection(modelSheet, config);
-  buildProfessorNotes(modelSheet, config);
+  buildScenarioRationale(modelSheet, config);
   applyFormatting(modelSheet, config);
   
   SpreadsheetApp.flush();
@@ -223,7 +223,7 @@ function discoverSpreadsheetStructure(ss) {
       nowcRatio: -0.06,         // Negative 6% based on 2024 actuals
       nolaRatioVector: [0.68, 0.69, 0.70, 0.70, 0.70, 0.69, 0.69, 0.68, 0.68, 0.68], // Rising for AI CapEx
       
-      // Professor's Notes:
+      // Scenario Rationale:
       notes: {
         growthRationale: 'Growth forecasted to start at 13% (aligned with recent 14% growth), primarily driven by Google Cloud\'s momentum (+31% YoY) offsetting "inventory compression" in Search. The fade to 3.5% terminal growth reflects the law of large numbers for a $350B+ revenue base.',
         moatRationale: 'WIDE MOAT rating based on TPU vertical integration and ecosystem lock-in. However, we model NOPAT margin compression (from 27.6% to 24%) to account for the "AI Tax" (higher depreciation/compute costs) and regulatory risks regarding traffic acquisition costs (TAC).',
@@ -798,12 +798,12 @@ function buildAbnormalEarningsSection(sheet, config) {
 
 /**
  * ════════════════════════════════════════════════════════════════════════════
- * SECTION 6: PROFESSOR'S STRATEGIC NOTES (Rows 55+)
+ * SECTION 6: SCENARIO RATIONALE (Rows 55+)
  * ════════════════════════════════════════════════════════════════════════════
  */
-function buildProfessorNotes(sheet, config) {
+function buildScenarioRationale(sheet, config) {
   const notes = config.strategic.notes;
-  sheet.getRange('A55').setValue("PROFESSOR'S STRATEGIC NOTES & RATIONALE");
+  sheet.getRange('A55').setValue("SCENARIO RATIONALE");
   
   sheet.getRange('A57').setValue('Growth Assumption Rationale:');
   sheet.getRange('A58').setValue(notes.growthRationale);
@@ -910,7 +910,7 @@ function applyFormatting(sheet, config) {
   sheet.getRange(`A42:${lastFC}42`).setBackground('#D9EAD3').setFontWeight('bold');
   sheet.getRange(`A43:${lastFC}43`).setBackground('#D9EAD3').setFontWeight('bold');
 
-  // Italic formatting for Professor's Notes content
+  // Italic formatting for Scenario Rationale content
   ['A58', 'A61', 'A64', 'A67'].forEach(cell => {
     sheet.getRange(cell).setFontStyle('italic');
   });
